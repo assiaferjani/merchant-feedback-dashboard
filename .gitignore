@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+node_modules/
+dist/
+.vite/
+.env
+.env.*
+!.env.example
+# Never place confidential exports in this project. The sole allowed CSV is
+# the generated, fictional development dataset.
+*.csv
+!data/merchant_feedback_synthetic.csv
+*.xlsx
+*.xls
+*.xlsm
+*production*.csv
+*confidential*.csv
