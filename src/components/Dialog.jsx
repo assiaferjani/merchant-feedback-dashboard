@@ -24,7 +24,7 @@ export default function Dialog({
         if (event.key !== "Tab") return;
         const elements = [
           ...event.currentTarget.querySelectorAll(
-            'button:not(:disabled), input:not(:disabled):not([hidden]), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex="0"]',
+            'button:not(:disabled), input:not(:disabled):not([hidden]), select:not(:disabled), textarea:not(:disabled), summary, a[href], [tabindex="0"]',
           ),
         ].filter((element) => element.getClientRects().length);
         const first = elements[0],

@@ -388,10 +388,11 @@ test("CSV requirements are explicit, the native input stays hidden, and unsuppor
     await dataTransfer.dispose();
   }
   await dialog
-    .getByText("Vous avez un fichier Excel, Numbers ou un autre format ?", {
-      exact: true,
-    })
-    .click();
+    .getByRole("button", { name: "Choisir un fichier CSV", exact: true })
+    .focus();
+  await page.keyboard.press("Tab");
+  await expect(dialog.locator("summary")).toBeFocused();
+  await page.keyboard.press("Enter");
   await expect(
     dialog.getByText(/exportez la feuille à importer au format CSV/),
   ).toBeVisible();
