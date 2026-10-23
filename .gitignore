@@ -17,3 +17,6 @@ dist/
 *.xlsm
 *production*.csv
 *confidential*.csv
+
+test-results/
+playwright-report/

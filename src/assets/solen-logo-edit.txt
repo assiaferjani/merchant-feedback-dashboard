@@ -1,0 +1,13 @@
+Solen Digital transparent logo
+
+Method: built-in image_gen image editing tool.
+Source: solen-digital.png (original reference, retained).
+Selected output: solen-digital-transparent.png (PNG with transparent alpha).
+
+Selected-output prompt:
+Use case: background-extraction. Edit target: the supplied Solen Digital logo image. Remove ONLY the warm ivory/white background, including all enclosed negative spaces between the swirl pieces and inside letters, replacing it with true transparent alpha. Preserve exactly the original swirl, its navy and gold colors, the exact shapes of the letters, the text "Solen" and "DIGITAL", their proportions, spacing, and composition. Clean anti-aliased edges without pale halos. No redesign, no shadows, no extra text, no new elements. Output a clean high-resolution transparent PNG with the complete logo and modest even transparent margins.
+
+Website rendering:
+The canonical PNG retains navy and gold. The sidebar applies an SVG color filter
+for an ivory/gold inverse appearance on navy while preserving the alpha channel.
+The logo button has a transparent background. No white panel is used.

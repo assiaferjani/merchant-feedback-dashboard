@@ -5,13 +5,19 @@ export function isValidDateKey(value) {
   if (!match) return false;
   const [, year, month, day] = match.map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
-  return date.getUTCFullYear() === year && date.getUTCMonth() + 1 === month && date.getUTCDate() === day;
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() + 1 === month &&
+    date.getUTCDate() === day
+  );
 }
 
 export function isValidDateRange({ startDate = "", endDate = "" } = {}) {
-  return (!startDate || isValidDateKey(startDate))
-    && (!endDate || isValidDateKey(endDate))
-    && (!startDate || !endDate || startDate <= endDate);
+  return (
+    (!startDate || isValidDateKey(startDate)) &&
+    (!endDate || isValidDateKey(endDate)) &&
+    (!startDate || !endDate || startDate <= endDate)
+  );
 }
 
 export function getDateRangeForPage(page, commercialRange, financialRange) {
@@ -27,10 +33,18 @@ export function getDateRangePreset(preset, now = new Date()) {
   let start;
   switch (preset) {
     case "7-days":
-      start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6);
+      start = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() - 6,
+      );
       break;
     case "30-days":
-      start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29);
+      start = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() - 29,
+      );
       break;
     case "month":
       start = new Date(today.getFullYear(), today.getMonth(), 1);
