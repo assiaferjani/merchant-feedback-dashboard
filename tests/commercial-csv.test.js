@@ -498,3 +498,49 @@ test("file selection rejects non-CSV and zero-byte files before parsing", async 
     /fichier CSV est vide/i,
   );
 });
+
+test("CSV file parsing handles common Windows, macOS, Ubuntu, and UTF-16 exports", async (t) => {
+  const values = [
+    "ref-1",
+    "2026-01-01",
+    "Avis",
+    "Équipe",
+    "Web",
+    "Oui",
+    "Site A",
+    "Nord",
+  ];
+  const content = (separator, newline) =>
+    REQUIRED_COMMERCIAL_CSV_FIELDS.join(separator) +
+    newline +
+    values.join(separator);
+  const utf16 = Buffer.from(content(";", "\r\n"), "utf16le");
+  const samples = [
+    [
+      "Windows UTF-8 BOM and CRLF",
+      Buffer.from("\uFEFF" + content(";", "\r\n")),
+    ],
+    ["macOS UTF-8 comma and LF", Buffer.from(content(",", "\n"))],
+    ["Ubuntu UTF-8 semicolon and LF", Buffer.from(content(";", "\n"))],
+    [
+      "UTF-16 little-endian BOM",
+      Buffer.concat([Buffer.from([0xff, 0xfe]), utf16]),
+    ],
+    [
+      "UTF-16 big-endian BOM",
+      Buffer.concat([Buffer.from([0xfe, 0xff]), Buffer.from(utf16).swap16()]),
+    ],
+  ];
+  for (const [name, bytes] of samples)
+    await t.test(name, async () => {
+      const result = await parseCommercialCsvFile(
+        new File([bytes], "export.CSV", { type: "application/octet-stream" }),
+      );
+      assert.equal(result.rows.length, 1);
+      assert.equal(result.rows[0].RESPONSABLE, "Équipe");
+      assert.equal(
+        result.rows[0].DATE_AVIS.toISOString().slice(0, 10),
+        "2026-01-01",
+      );
+    });
+});

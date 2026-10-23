@@ -148,6 +148,8 @@ export function CsvImportButton({ onFile, label = "Importer mon CSV" }) {
         ref={inputRef}
         className="visually-hidden-input"
         type="file"
+        hidden
+        tabIndex={-1}
         accept=".csv,text/csv"
         aria-label="Choisir un fichier CSV d’avis local"
         onChange={(event) => {
@@ -178,6 +180,8 @@ export function FinancialCsvImportButton({
         ref={inputRef}
         className="visually-hidden-input"
         type="file"
+        hidden
+        tabIndex={-1}
         accept=".csv,text/csv"
         aria-label="Choisir un fichier financier CSV local"
         onChange={(event) => {
@@ -205,6 +209,8 @@ export function TuitionCsvImportButton({ sourceType, onFile, label }) {
         ref={inputRef}
         className="visually-hidden-input"
         type="file"
+        hidden
+        tabIndex={-1}
         accept=".csv,text/csv"
         aria-label={`Importer la source ${sourceType}`}
         onChange={(event) => {

@@ -351,3 +351,69 @@ test("mobile period controls expand, remain usable, and show an active period", 
     ),
   ).toBe(false);
 });
+
+test("CSV requirements are explicit, the native input stays hidden, and unsupported drops are rejected", async ({
+  page,
+}) => {
+  await page.goto("/#/data-sources");
+  await page
+    .getByRole("button", { name: "Connecter un fichier", exact: true })
+    .first()
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Connecter une source" });
+  await expect(
+    dialog.getByText("Fichiers CSV uniquement (.csv)", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByText(
+      "Compatible avec les exports CSV de Windows, macOS et Ubuntu.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  const input = dialog.locator('input[type="file"]');
+  await expect(input).toBeHidden();
+  await expect(input).toHaveAttribute("hidden", "");
+  for (const name of ["report.xlsx", "report.pdf"]) {
+    const dataTransfer = await page.evaluateHandle((filename) => {
+      const data = new DataTransfer();
+      data.items.add(new File(["unsupported content"], filename));
+      return data;
+    }, name);
+    await dialog
+      .locator(".import-dropzone")
+      .dispatchEvent("drop", { dataTransfer });
+    await expect(dialog.getByRole("alert")).toContainText(
+      "choisissez un fichier CSV",
+    );
+    await dataTransfer.dispose();
+  }
+  await dialog
+    .getByText("Vous avez un fichier Excel, Numbers ou un autre format ?", {
+      exact: true,
+    })
+    .click();
+  await expect(
+    dialog.getByText(/exportez la feuille à importer au format CSV/),
+  ).toBeVisible();
+  const accessibility = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+    .analyze();
+  expect(accessibility.violations).toEqual([]);
+  const chooserPromise = page.waitForEvent("filechooser");
+  await dialog
+    .getByRole("button", { name: "Choisir un fichier CSV", exact: true })
+    .focus();
+  await page.keyboard.press("Enter");
+  const chooser = await chooserPromise;
+  await chooser.setFiles({
+    name: "mac-export.CSV",
+    mimeType: "application/octet-stream",
+    buffer: Buffer.from(
+      "IDENTITE_LEAD,DATE_AVIS,LIB_AVIS,RESPONSABLE,LIB_SOURCE_LEAD,EST_CLASSER,LIB_ETABLISSEMENT,LIB_REGION\nref-1,2026-01-01,Avis,Équipe,Web,Oui,Site A,Nord\n",
+    ),
+  });
+  await expect(dialog).not.toBeVisible();
+  await expect(page.locator(".commercial-metric-value").first()).toHaveText(
+    "1",
+  );
+});

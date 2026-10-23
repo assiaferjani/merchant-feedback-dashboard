@@ -23,7 +23,7 @@ npm run preview
 ## Connecter ses données
 
 1. Cliquer sur **Connecter un fichier** et choisir son contenu : avis, dossiers étudiants, échéancier, synthèse financière ou listes de référence.
-2. Sélectionner un CSV local. UTF-8, Windows-1252 et UTF-16 avec BOM sont pris en charge. Limites : **20 Mo et 100 000 lignes** par fichier.
+2. Sélectionner un fichier **CSV uniquement (.csv)**, exporté depuis Windows, macOS ou Ubuntu. Les classeurs Excel (.xlsx/.xls), Numbers, PDF et images ne sont pas importés directement : exporter d’abord la feuille en CSV depuis le tableur. Renommer une extension ne convertit pas le fichier. UTF-8, Windows-1252 et UTF-16 avec BOM sont pris en charge. Limites : **20 Mo et 100 000 lignes** par fichier.
 3. Vérifier les colonnes reconnues et les contrôles de qualité dans la rubrique correspondante. Un fichier financier générique nécessite de définir ses correspondances avant de calculer des montants.
 4. Dans **Sources & paramètres**, confirmer la devise des fichiers financiers et rapprocher les totaux avec les exports d’origine. Le choix d’une devise ajoute une unité ; il ne convertit aucun montant.
 

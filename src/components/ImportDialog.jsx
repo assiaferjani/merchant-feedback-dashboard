@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import Dialog from "./Dialog.jsx";
-import { IMPORT_LIMIT_LABEL } from "../import-limits.js";
+import { IMPORT_LIMIT_LABEL, validateImportFile } from "../import-limits.js";
 
 export const SOURCE_TYPES = [
   {
@@ -44,6 +44,12 @@ export default function ImportDialog({
   const upload = async (file) => {
     if (!file || busy) return;
     setError("");
+    try {
+      validateImportFile(file);
+    } catch (error) {
+      setError(error.message);
+      return;
+    }
     const result = await onImport(file, selectedType);
     if (result.ok) onClose();
     else
@@ -59,8 +65,8 @@ export default function ImportDialog({
       className="import-dialog"
     >
       <p>
-        Choisissez le contenu du fichier. Chaque source reste indépendante et
-        locale.
+        Tous les imports utilisent un fichier CSV. Choisissez le type de données
+        qu’il contient ; chaque source reste indépendante et locale.
       </p>
       <div className="import-steps" aria-label="Étapes de l’import">
         <span>1 · Type de données</span>
@@ -93,14 +99,22 @@ export default function ImportDialog({
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
           event.preventDefault();
+          if (event.dataTransfer.files.length !== 1) {
+            setError("Ajoutez un seul fichier CSV à la fois.");
+            return;
+          }
           void upload(event.dataTransfer.files[0]);
         }}
       >
-        <p>Glissez votre CSV ici ou sélectionnez-le sur cet appareil.</p>
+        <p id="csv-format">
+          <strong>Fichiers CSV uniquement (.csv)</strong>
+        </p>
+        <p>Glissez votre fichier CSV ici ou choisissez-le sur cet appareil.</p>
         <button
           type="button"
           className="primary-button"
           disabled={busy}
+          aria-describedby="csv-format csv-platforms csv-limits csv-encoding"
           onClick={() => input.current.click()}
         >
           Choisir un fichier CSV
@@ -108,6 +122,8 @@ export default function ImportDialog({
         <input
           ref={input}
           type="file"
+          hidden
+          tabIndex={-1}
           accept=".csv,text/csv"
           aria-label="Fichier CSV à connecter"
           className="visually-hidden-input"
@@ -117,8 +133,25 @@ export default function ImportDialog({
             event.target.value = "";
           }}
         />
-        <small>{IMPORT_LIMIT_LABEL} · UTF-8, Windows-1252 ou UTF-16</small>
+        <small id="csv-platforms">
+          Compatible avec les exports CSV de Windows, macOS et Ubuntu.
+        </small>
+        <small id="csv-limits">{IMPORT_LIMIT_LABEL}</small>
+        <small id="csv-encoding">
+          Encodages acceptés : UTF-8 (recommandé), Windows-1252 et UTF-16.
+        </small>
       </div>
+      <details className="csv-export-help">
+        <summary>
+          Vous avez un fichier Excel, Numbers ou un autre format ?
+        </summary>
+        <p>
+          Depuis Excel, Numbers ou LibreOffice Calc, exportez la feuille à
+          importer au format CSV, de préférence en UTF-8. Les classeurs .xlsx,
+          .xls, .numbers, les PDF et les images ne sont pas lus directement.
+          Renommer l’extension d’un fichier ne le convertit pas en CSV.
+        </p>
+      </details>
       {progress && (
         <div className="import-progress" role="status">
           <progress aria-label="Import en cours" />

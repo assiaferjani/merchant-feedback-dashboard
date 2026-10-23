@@ -33,3 +33,29 @@ test("row limit accepts supported sources and rejects excessive rows", () => {
     /100 000/,
   );
 });
+
+test("CSV support is case-insensitive and independent of OS-specific MIME labels", () => {
+  for (const type of [
+    "text/csv",
+    "application/vnd.ms-excel",
+    "application/octet-stream",
+    "",
+  ]) {
+    assert.doesNotThrow(() =>
+      validateImportFile({ name: "export.CSV", size: 100, type }),
+    );
+  }
+  for (const name of [
+    "export.xlsx",
+    "export.xls",
+    "export.numbers",
+    "report.pdf",
+    "image.png",
+    "file.csv.xlsx",
+  ]) {
+    assert.throws(
+      () => validateImportFile({ name, size: 100 }),
+      /choisissez un fichier CSV/,
+    );
+  }
+});
