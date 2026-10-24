@@ -488,14 +488,14 @@ test("empty files, empty data, and missing required columns provide French error
   );
 });
 
-test("file selection rejects non-CSV and zero-byte files before parsing", async () => {
+test("file selection rejects unsupported and zero-byte files before parsing", async () => {
   await assert.rejects(
-    parseCommercialCsvFile({ name: "export.xlsx", size: 42 }),
-    /Format incorrect/i,
+    parseCommercialCsvFile({ name: "export.pdf", size: 42 }),
+    /Format non pris en charge/i,
   );
   await assert.rejects(
     parseCommercialCsvFile({ name: "export.csv", size: 0 }),
-    /fichier CSV est vide/i,
+    /fichier est vide/i,
   );
 });
 

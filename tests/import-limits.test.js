@@ -9,7 +9,7 @@ import {
 
 test("imports reject empty, unsupported, and oversized files before parsing", () => {
   assert.throws(
-    () => validateImportFile({ name: "file.xlsx", size: 100 }),
+    () => validateImportFile({ name: "file.pdf", size: 100 }),
     /CSV/,
   );
   assert.throws(
@@ -46,16 +46,26 @@ test("CSV support is case-insensitive and independent of OS-specific MIME labels
     );
   }
   for (const name of [
-    "export.xlsx",
-    "export.xls",
     "export.numbers",
     "report.pdf",
     "image.png",
-    "file.csv.xlsx",
+    "file.csv.exe",
   ]) {
     assert.throws(
       () => validateImportFile({ name, size: 100 }),
       /choisissez un fichier CSV/,
+    );
+  }
+});
+
+test("all supported tabular extensions are accepted regardless of MIME", () => {
+  for (const ext of ["csv", "tsv", "txt", "xlsx", "xls", "ods"]) {
+    assert.doesNotThrow(() =>
+      validateImportFile({
+        name: `data.${ext.toUpperCase()}`,
+        size: 10,
+        type: "application/octet-stream",
+      }),
     );
   }
 });

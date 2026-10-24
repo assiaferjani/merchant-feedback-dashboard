@@ -182,7 +182,7 @@ export function ImportedCsvPipeline({
       <PageTitle
         title="Pipeline candidats"
         subtitle="Répartition des avis importés. Les catégories ne représentent pas des étapes candidates confirmées."
-        badge="CSV local"
+        badge="Fichier local"
       />
       <CsvFiltersBar
         rows={rows}
@@ -193,7 +193,7 @@ export function ImportedCsvPipeline({
       <section className="source-alert">
         <span className="source-alert-icon">i</span>
         <div>
-          <b>Source CSV active : {sourceInfo.fileName}</b>
+          <b>Source active : {sourceInfo.fileName}</b>
           <p>
             Les catégories et regroupements ci-dessous décrivent les lignes
             d’avis. Ils ne représentent pas une répartition de pipeline ou des
@@ -255,15 +255,15 @@ export function ImportedCsvOverview({
   return (
     <>
       <PageTitle
-        eyebrow="SOURCE LOCALE · CSV"
+        eyebrow="SOURCE LOCALE · FICHIER"
         title="Suivi des avis entrants"
         subtitle="Import local actif. Les lignes d’avis et les candidats distincts sont comptés séparément."
-        badge="CSV local"
+        badge="Fichier local"
       />
       <section className="source-alert">
         <span className="source-alert-icon">i</span>
         <div>
-          <b>Source active : fichier CSV sélectionné sur cet appareil</b>
+          <b>Source active : fichier sélectionné sur cet appareil</b>
           <p>
             {sourceInfo.fileName} · {fmtCount(rows.length)} lignes importées
             {sourceInfo.invalidDates
@@ -301,7 +301,7 @@ export function ImportedCsvOverview({
         <MetricCard
           title="Avis enregistrés"
           value={fmtCount(summary.totalAvis)}
-          helper="Nombre de lignes CSV dans la période"
+          helper="Nombre de lignes du fichier dans la période"
           icon="total"
         />
         <MetricCard
@@ -398,7 +398,10 @@ export function ImportedCsvReport({
       indicateur: "Candidats distincts renseignés",
       valeur: summary.distinctCandidates,
     },
-    { indicateur: "Avis enregistrés (lignes CSV)", valeur: summary.totalAvis },
+    {
+      indicateur: "Avis enregistrés (lignes du fichier)",
+      valeur: summary.totalAvis,
+    },
     {
       indicateur: "Avis avec date valide dans la sélection",
       valeur: summary.totalAvis - summary.invalidDates,
@@ -439,10 +442,10 @@ export function ImportedCsvReport({
   return (
     <div className="print-report">
       <PageTitle
-        eyebrow="ANALYSE COMMERCIALE · CSV LOCAL"
+        eyebrow="ANALYSE COMMERCIALE · FICHIER LOCAL"
         title="Rapport des avis"
         subtitle="Lecture des volumes enregistrés, des valeurs source et des dates disponibles."
-        badge="CSV local"
+        badge="Fichier local"
       />
       <section className="report-period">
         <span>PÉRIODE COUVERTE</span>
@@ -495,8 +498,8 @@ export function ImportedCsvReport({
               ) : (
                 "."
               )}{" "}
-              Ces comptages décrivent les lignes CSV et ne qualifient ni la
-              satisfaction ni la performance individuelle.
+              Ces comptages décrivent les lignes du fichier et ne qualifient ni
+              la satisfaction ni la performance individuelle.
             </>
           ) : (
             "Aucune ligne ne correspond aux filtres sélectionnés. Ajustez la période ou les filtres pour afficher le rapport."
@@ -681,14 +684,16 @@ export function FeedbackPage({
   return (
     <>
       <PageTitle
-        eyebrow={imported ? "SOURCE LOCALE · CSV" : "DONNÉES DE DÉVELOPPEMENT"}
+        eyebrow={
+          imported ? "SOURCE LOCALE · FICHIER" : "DONNÉES DE DÉVELOPPEMENT"
+        }
         title="Retours commerçants"
         subtitle={
           imported
-            ? "Avis enregistrés dans le CSV local actif; les identifiants sont comptés sans être affichés."
+            ? "Avis enregistrés dans le fichier local actif; les identifiants sont comptés sans être affichés."
             : "Explorez les tendances, la répartition des avis et les derniers commentaires."
         }
-        badge={imported ? "CSV local" : "Synthétique"}
+        badge={imported ? "Fichier local" : "Synthétique"}
       />
       <CsvFiltersBar
         rows={rows}
@@ -776,7 +781,7 @@ export function FeedbackPage({
         {imported && (
           <Panel
             title="Retours par responsable"
-            subtitle="Comptage par ligne CSV"
+            subtitle="Comptage par ligne du fichier"
           >
             <FeedbackBars
               rows={groupCommercialCsv(filteredRows, "RESPONSABLE")}

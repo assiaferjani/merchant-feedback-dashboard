@@ -407,8 +407,17 @@ function App() {
           multiple: false,
           types: [
             {
-              description: "Fichier CSV financier",
-              accept: { "text/csv": [".csv"] },
+              description: "Fichier financier (CSV, Excel ou LibreOffice)",
+              accept: {
+                "application/octet-stream": [
+                  ".csv",
+                  ".tsv",
+                  ".txt",
+                  ".xlsx",
+                  ".xls",
+                  ".ods",
+                ],
+              },
             },
           ],
         });
@@ -863,7 +872,7 @@ function App() {
               <span>Solen Digital · Pilotage commercial</span>
               <span>
                 {importedCsv
-                  ? "Avis : CSV local importé · aucune transmission externe"
+                  ? "Avis : fichier local importé · aucune transmission externe"
                   : available
                     ? "Source commerciale configurée"
                     : "Démonstration · Aucune source commerciale connectée"}{" "}

@@ -260,8 +260,8 @@ test("financial file parsing supports UTF-8 and Windows-1252 CSV encodings", asy
     /vide/i,
   );
   await assert.rejects(
-    parseFinancialCsvFile(new File(["x"], "notes.txt")),
-    /format incorrect/i,
+    parseFinancialCsvFile(new File(["x"], "notes.pdf")),
+    /Format non pris en charge/i,
   );
 });
 

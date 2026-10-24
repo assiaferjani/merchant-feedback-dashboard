@@ -111,6 +111,8 @@ function discoverTuitionCsvTextResult(parsed, sourceType, fileName) {
   return {
     sourceType,
     fileName,
+    sheetName: parsed.sheetName,
+    sheetCount: parsed.sheetCount,
     headers: parsed.headers,
     rows: parsed.rows,
     rowCount: parsed.rowCount,

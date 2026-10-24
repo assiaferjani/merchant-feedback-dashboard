@@ -1,3 +1,5 @@
+import { readTabularFile } from "./tabular-file.js";
+import { validateImportRows } from "./import-limits.js";
 import Papa from "papaparse";
 import { isValidDateRange } from "./date-filters.js";
 
@@ -281,56 +283,10 @@ export function parseCommercialCsvText(text) {
   return parseCommercialCsvContent(text);
 }
 
-export function parseCommercialCsvFile(file) {
-  if (!file || !/\.csv$/i.test(file.name ?? ""))
-    return Promise.reject(
-      new Error("Format incorrect : sélectionnez un fichier .csv."),
-    );
-  if (!file.size) return Promise.reject(new Error("Le fichier CSV est vide."));
-  if (typeof file.arrayBuffer !== "function")
-    return Promise.reject(
-      new Error("Impossible de lire ce fichier CSV sur cet appareil."),
-    );
-  return file
-    .arrayBuffer()
-    .then((buffer) => {
-      const bytes = new Uint8Array(buffer);
-      let encoding = "utf-8";
-      let offset = 0;
-      if (bytes[0] === 0xff && bytes[1] === 0xfe) {
-        encoding = "utf-16le";
-        offset = 2;
-      } else if (bytes[0] === 0xfe && bytes[1] === 0xff) {
-        encoding = "utf-16be";
-        offset = 2;
-      } else if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf)
-        offset = 3;
-      let csvText;
-      try {
-        csvText = new TextDecoder(encoding, { fatal: true }).decode(
-          bytes.subarray(offset),
-        );
-      } catch {
-        try {
-          csvText = new TextDecoder("windows-1252").decode(bytes);
-        } catch {
-          throw new Error(
-            "Encodage non reconnu. Réexportez le CSV en UTF-8 ou Windows-1252.",
-          );
-        }
-      }
-      return parseCommercialCsvText(csvText);
-    })
-    .catch((error) => {
-      if (
-        error instanceof Error &&
-        /^(?:Le fichier|Fichier incompatible|Colonnes manquantes|Format incorrect|Impossible|Encodage non reconnu)/i.test(
-          error.message,
-        )
-      )
-        throw error;
-      throw new Error("Impossible de lire ce fichier CSV sur cet appareil.");
-    });
+// Kept under its original name for existing source adapters.
+export async function parseCommercialCsvFile(file) {
+  const { text, ...metadata } = await readTabularFile(file);
+  return validateImportRows({ ...parseCommercialCsvText(text), ...metadata });
 }
 
 export const MISSING_RESPONSIBLE_FILTER = "__MISSING_RESPONSABLE__";

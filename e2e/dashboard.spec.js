@@ -1,3 +1,4 @@
+import { utils, write } from "xlsx";
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFileSync } from "node:fs";
@@ -19,13 +20,11 @@ async function connect(page, type, name, content) {
     .first()
     .click();
   await page.getByRole("radio", { name: new RegExp(type) }).check();
-  await page
-    .getByLabel("Fichier CSV à connecter", { exact: true })
-    .setInputFiles({
-      name,
-      mimeType: "text/csv",
-      buffer: Buffer.from(content),
-    });
+  await page.getByLabel("Fichier à connecter", { exact: true }).setInputFiles({
+    name,
+    mimeType: "text/csv",
+    buffer: Buffer.from(content),
+  });
   await expect(
     page.getByRole("dialog", { name: "Connecter une source" }),
   ).not.toBeVisible();
@@ -168,20 +167,18 @@ test("commercial upload, oversized rejection, and safe deletion", async ({
     "feedback.csv",
     readFileSync("data/merchant_feedback_synthetic.csv", "utf8"),
   );
-  await expect(page.locator(".toolbar-sources")).toContainText("CSV local");
+  await expect(page.locator(".toolbar-sources")).toContainText("Fichier local");
   await page.goto("/#/data-sources");
   await expect(page.getByText("feedback.csv", { exact: true })).toBeVisible();
   await page
     .getByRole("button", { name: "Connecter un fichier", exact: true })
     .first()
     .click();
-  await page
-    .getByLabel("Fichier CSV à connecter", { exact: true })
-    .setInputFiles({
-      name: "oversized.csv",
-      mimeType: "text/csv",
-      buffer: Buffer.alloc(20 * 1024 * 1024 + 1, "x"),
-    });
+  await page.getByLabel("Fichier à connecter", { exact: true }).setInputFiles({
+    name: "oversized.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.alloc(20 * 1024 * 1024 + 1, "x"),
+  });
   await expect(page.getByRole("dialog").getByRole("alert")).toContainText(
     "20 Mo",
   );
@@ -352,7 +349,7 @@ test("mobile period controls expand, remain usable, and show an active period", 
   ).toBe(false);
 });
 
-test("CSV requirements are explicit, the native input stays hidden, and unsupported drops are rejected", async ({
+test("Tabular file requirements are explicit, the native input stays hidden, and unsupported drops are rejected", async ({
   page,
 }) => {
   await page.goto("/#/data-sources");
@@ -362,18 +359,20 @@ test("CSV requirements are explicit, the native input stays hidden, and unsuppor
     .click();
   const dialog = page.getByRole("dialog", { name: "Connecter une source" });
   await expect(
-    dialog.getByText("Fichiers CSV uniquement (.csv)", { exact: true }),
-  ).toBeVisible();
-  await expect(
     dialog.getByText(
-      "Compatible avec les exports CSV de Windows, macOS et Ubuntu.",
+      "CSV, TSV, TXT, Excel (.xlsx, .xls) et LibreOffice (.ods)",
       { exact: true },
     ),
+  ).toBeVisible();
+  await expect(
+    dialog.getByText("Compatible avec Windows, macOS et Ubuntu.", {
+      exact: true,
+    }),
   ).toBeVisible();
   const input = dialog.locator('input[type="file"]');
   await expect(input).toBeHidden();
   await expect(input).toHaveAttribute("hidden", "");
-  for (const name of ["report.xlsx", "report.pdf"]) {
+  for (const name of ["report.pdf", "image.png"]) {
     const dataTransfer = await page.evaluateHandle((filename) => {
       const data = new DataTransfer();
       data.items.add(new File(["unsupported content"], filename));
@@ -388,21 +387,19 @@ test("CSV requirements are explicit, the native input stays hidden, and unsuppor
     await dataTransfer.dispose();
   }
   await dialog
-    .getByRole("button", { name: "Choisir un fichier CSV", exact: true })
+    .getByRole("button", { name: "Choisir un fichier", exact: true })
     .focus();
   await page.keyboard.press("Tab");
   await expect(dialog.locator("summary")).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(
-    dialog.getByText(/exportez la feuille à importer au format CSV/),
-  ).toBeVisible();
+  await expect(dialog.getByText(/la première feuille visible/)).toBeVisible();
   const accessibility = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
     .analyze();
   expect(accessibility.violations).toEqual([]);
   const chooserPromise = page.waitForEvent("filechooser");
   await dialog
-    .getByRole("button", { name: "Choisir un fichier CSV", exact: true })
+    .getByRole("button", { name: "Choisir un fichier", exact: true })
     .focus();
   await page.keyboard.press("Enter");
   const chooser = await chooserPromise;
@@ -417,4 +414,110 @@ test("CSV requirements are explicit, the native input stays hidden, and unsuppor
   await expect(page.locator(".commercial-metric-value").first()).toHaveText(
     "1",
   );
+});
+
+for (const extension of ["xlsx", "xls", "ods", "tsv", "txt"]) {
+  test(`${extension} imports through the Worker and restores after reload`, async ({
+    page,
+  }) => {
+    await page.goto("/#/data-sources");
+    const rows = [
+      [
+        "IDENTITE_LEAD",
+        "DATE_AVIS",
+        "LIB_AVIS",
+        "RESPONSABLE",
+        "LIB_SOURCE_LEAD",
+        "EST_CLASSER",
+        "LIB_ETABLISSEMENT",
+        "LIB_REGION",
+      ],
+      [
+        "00042",
+        "2026-10-01",
+        "Très bien",
+        "Équipe",
+        "Web",
+        "Oui",
+        "Campus",
+        "Nord",
+      ],
+    ];
+    let content;
+    if (["tsv", "txt"].includes(extension)) {
+      content = rows.map((row) => row.join("\t")).join("\r\n");
+    } else {
+      const workbook = utils.book_new();
+      utils.book_append_sheet(
+        workbook,
+        utils.aoa_to_sheet(rows),
+        "Avis clients",
+      );
+      content = write(workbook, { bookType: extension, type: "buffer" });
+    }
+    await connect(
+      page,
+      "Avis & activité commerciale",
+      `avis.${extension}`,
+      content,
+    );
+    await page.goto("/#/data-sources");
+    await expect(
+      page.getByText(`avis.${extension}`, { exact: true }),
+    ).toBeVisible();
+    if (!["tsv", "txt"].includes(extension)) {
+      await expect(
+        page.getByText("Avis clients", { exact: true }),
+      ).toBeVisible();
+    }
+    await page.reload();
+    await expect(
+      page.getByText(`avis.${extension}`, { exact: true }),
+    ).toBeVisible();
+    await page.goto("/#/feedback");
+    await expect(page.locator(".commercial-metric-value").first()).toHaveText(
+      "1",
+    );
+  });
+}
+
+test("Excel student records preserve their sheet and financial totals in the dashboard", async ({
+  page,
+}) => {
+  await page.goto("/#/data-sources");
+  const workbook = utils.book_new();
+  utils.book_append_sheet(
+    workbook,
+    utils.aoa_to_sheet([
+      [
+        "ID Étudiant",
+        "Matricule",
+        "Nom",
+        "Prénom",
+        "Formation",
+        "Total à payer",
+        "Total payé",
+        "Reste à payer",
+      ],
+      ["S1", "M1", "Fictif", "Test", "Sciences", 1200.5, 400.25, 800.25],
+    ]),
+    "Étudiants",
+  );
+  await connect(
+    page,
+    "Dossiers étudiants",
+    "students.xlsx",
+    write(workbook, { type: "buffer", bookType: "xlsx" }),
+  );
+  await page.goto("/#/data-sources");
+  await expect(page.getByText("Étudiants", { exact: true })).toBeVisible();
+
+  await page.goto("/#/students");
+  await expect(page.locator(".commercial-metric-value").nth(1)).toContainText(
+    "200,5",
+  );
+  await expect(page.locator(".commercial-metric-value").nth(2)).toContainText(
+    "400,25",
+  );
+  await expect(page.getByText("Fictif", { exact: true })).toBeVisible();
 });

@@ -122,7 +122,7 @@ export function FinancialSummaryPage({ source, error, onImport }) {
         eyebrow="SUIVI FINANCIER"
         title="Revenus & inscriptions"
         subtitle="Synthèse financière agrégée importée localement. Le fichier ne contient pas de lignes individuelles d’étudiants ou de paiements."
-        badge="Synthèse CSV active"
+        badge="Synthèse active"
       />
       <div className="financial-source-card">
         <div>
@@ -556,7 +556,7 @@ export function GenericFinancialPage({
         <PageTitle
           title="Revenus & inscriptions"
           subtitle="Source financière locale, indépendante des avis commerciaux. Seules les métriques étayées par le fichier sont calculées."
-          badge={source ? "CSV local enregistré" : "Source non connectée"}
+          badge={source ? "Fichier local enregistré" : "Source non connectée"}
         />
       )}
       {!embedded && !source && error && (
@@ -573,7 +573,7 @@ export function GenericFinancialPage({
           <div className="eyebrow">SOURCE FINANCIÈRE</div>
           <h2>Aucun fichier financier importé</h2>
           <p>
-            Importez un CSV local pour découvrir ses colonnes et choisir les
+            Importez un fichier local pour découvrir ses colonnes et choisir les
             correspondances. Les données restent sur cet appareil et sont
             conservées dans ce navigateur après fermeture ou actualisation. Vous
             pouvez les effacer dans Sources & paramètres.
@@ -850,7 +850,7 @@ export function FinancialAutoLinkControl({ linked, status, onLink }) {
       ? "Réautoriser le fichier lié"
       : linked
         ? "Relier un autre fichier local"
-        : "Lier un CSV pour actualisation auto";
+        : "Lier un fichier pour actualisation auto";
   const statusLabel =
     status === "active"
       ? "Actualisation active · contrôle toutes les 30 s"
@@ -1164,7 +1164,7 @@ export function TuitionSourceCard({
           <p>
             {source
               ? `${source.fileName} · ${fmtCount(source.rowCount)} lignes détectées · séparateur ${source.delimiter === "\t" ? "tabulation" : source.delimiter}`
-              : `Aucune source ${label} importée. Sélectionnez un CSV local pour commencer.`}
+              : `Aucune source ${label} importée. Sélectionnez un fichier local pour commencer.`}
           </p>
         </div>
         <TuitionCsvImportButton
@@ -1172,7 +1172,7 @@ export function TuitionSourceCard({
           onFile={onImport}
           label={
             source
-              ? "Remplacer le CSV"
+              ? "Remplacer le fichier"
               : `Importer ${sourceType === "references" ? "les référentiels" : "le fichier"}`
           }
         />
@@ -1364,7 +1364,9 @@ export function TuitionStudentsPage({
         title="Étudiants & inscriptions"
         subtitle="Situation individuelle selon le fichier étudiant importé; une ligne n’est pas automatiquement une inscription distincte."
         badge={
-          source ? (source.quality?.status ?? "CSV local") : "Source requise"
+          source
+            ? (source.quality?.status ?? "Fichier local")
+            : "Source requise"
         }
       />
       {!source ? (
@@ -1672,7 +1674,9 @@ export function TuitionSchedulePage({
         title="Échéancier"
         subtitle="Échéances et règlements selon les lignes réellement présentes dans la source."
         badge={
-          source ? (source.quality?.status ?? "CSV local") : "Source requise"
+          source
+            ? (source.quality?.status ?? "Fichier local")
+            : "Source requise"
         }
       />
       {!source ? (
@@ -2039,7 +2043,7 @@ export function TuitionRevenuePage({
             onFile={onFinancialImport}
             label={
               financialSource
-                ? "Remplacer le CSV financier"
+                ? "Remplacer le fichier financier"
                 : "Importer la synthèse agrégée"
             }
           />

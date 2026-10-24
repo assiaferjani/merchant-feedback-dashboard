@@ -1,6 +1,11 @@
 import { useRef, useState } from "react";
 import Dialog from "./Dialog.jsx";
-import { IMPORT_LIMIT_LABEL, validateImportFile } from "../import-limits.js";
+import {
+  IMPORT_FILE_ACCEPT,
+  IMPORT_FORMAT_LABEL,
+  IMPORT_LIMIT_LABEL,
+  validateImportFile,
+} from "../import-limits.js";
 
 export const SOURCE_TYPES = [
   {
@@ -65,12 +70,12 @@ export default function ImportDialog({
       className="import-dialog"
     >
       <p>
-        Tous les imports utilisent un fichier CSV. Choisissez le type de données
-        qu’il contient ; chaque source reste indépendante et locale.
+        Importez un export texte délimité ou un classeur. Choisissez le type de
+        données qu’il contient ; chaque source reste indépendante et locale.
       </p>
       <div className="import-steps" aria-label="Étapes de l’import">
         <span>1 · Type de données</span>
-        <span>2 · Vérification du CSV</span>
+        <span>2 · Vérification du fichier</span>
         <span>3 · Résultat et colonnes</span>
       </div>
       <fieldset disabled={busy} className="source-type-options">
@@ -100,16 +105,16 @@ export default function ImportDialog({
         onDrop={(event) => {
           event.preventDefault();
           if (event.dataTransfer.files.length !== 1) {
-            setError("Ajoutez un seul fichier CSV à la fois.");
+            setError("Ajoutez un seul fichier à la fois.");
             return;
           }
           void upload(event.dataTransfer.files[0]);
         }}
       >
         <p id="csv-format">
-          <strong>Fichiers CSV uniquement (.csv)</strong>
+          <strong>{IMPORT_FORMAT_LABEL}</strong>
         </p>
-        <p>Glissez votre fichier CSV ici ou choisissez-le sur cet appareil.</p>
+        <p>Glissez votre fichier ici ou choisissez-le sur cet appareil.</p>
         <button
           type="button"
           className="primary-button"
@@ -117,15 +122,15 @@ export default function ImportDialog({
           aria-describedby="csv-format csv-platforms csv-limits csv-encoding"
           onClick={() => input.current.click()}
         >
-          Choisir un fichier CSV
+          Choisir un fichier
         </button>
         <input
           ref={input}
           type="file"
           hidden
           tabIndex={-1}
-          accept=".csv,text/csv"
-          aria-label="Fichier CSV à connecter"
+          accept={IMPORT_FILE_ACCEPT}
+          aria-label="Fichier à connecter"
           className="visually-hidden-input"
           disabled={busy}
           onChange={(event) => {
@@ -134,22 +139,29 @@ export default function ImportDialog({
           }}
         />
         <small id="csv-platforms">
-          Compatible avec les exports CSV de Windows, macOS et Ubuntu.
+          Compatible avec Windows, macOS et Ubuntu.
         </small>
         <small id="csv-limits">{IMPORT_LIMIT_LABEL}</small>
         <small id="csv-encoding">
-          Encodages acceptés : UTF-8 (recommandé), Windows-1252 et UTF-16.
+          Fichiers texte : UTF-8 (recommandé), Windows-1252 et UTF-16.
         </small>
       </div>
       <details className="csv-export-help">
-        <summary>
-          Vous avez un fichier Excel, Numbers ou un autre format ?
-        </summary>
+        <summary>Comment préparer mon fichier ou mon classeur ?</summary>
         <p>
-          Depuis Excel, Numbers ou LibreOffice Calc, exportez la feuille à
-          importer au format CSV, de préférence en UTF-8. Les classeurs .xlsx,
-          .xls, .numbers, les PDF et les images ne sont pas lus directement.
-          Renommer l’extension d’un fichier ne le convertit pas en CSV.
+          Pour un classeur Excel ou LibreOffice, la première feuille visible
+          contenant des données est importée. Son nom apparaît dans les sources.
+          Placez la feuille souhaitée en premier ou exportez-la séparément (512
+          colonnes maximum par feuille). Les dates et les montants restent des
+          valeurs de données ; les formules ne sont pas exécutées et doivent
+          avoir un résultat enregistré.
+        </p>
+        <p>
+          Les fichiers CSV, TSV et TXT doivent contenir un tableau avec des
+          en-têtes et des colonnes séparées par une virgule, un point-virgule ou
+          une tabulation. Depuis Numbers, exportez en Excel ou CSV. Les PDF,
+          images et documents texte non structurés ne sont pas pris en charge.
+          Renommer l’extension ne convertit pas un fichier.
         </p>
       </details>
       {progress && (

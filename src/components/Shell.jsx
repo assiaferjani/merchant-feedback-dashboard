@@ -326,7 +326,7 @@ export function Header({
             >
               <i />
               {dataState === "imported"
-                ? "Avis : CSV local"
+                ? "Avis : Fichier local"
                 : dataState === "connected"
                   ? "Avis : connectés"
                   : "Avis : démo"}
@@ -372,7 +372,7 @@ export function Header({
             <b>Importez vos fichiers</b>
             <p>
               Utilisez « Connecter un fichier », choisissez le type de données
-              puis importez votre CSV. Sources & paramètres rassemble les
+              puis importez votre fichier. Sources & paramètres rassemble les
               fichiers et leurs contrôles.
             </p>
           </li>

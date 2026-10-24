@@ -73,8 +73,8 @@ export default function SourceHub({
           </p>
           <small>
             {storageStatus === "unavailable"
-              ? "Attention : conservation locale indisponible. Gardez vos CSV d’origine."
-              : "Conservez les CSV d’origine comme sauvegarde et réimportez-les pour restaurer votre espace."}
+              ? "Attention : conservation locale indisponible. Gardez vos fichiers d’origine."
+              : "Conservez les fichiers d’origine comme sauvegarde et réimportez-les pour restaurer votre espace."}
           </small>
         </div>
       </section>
@@ -102,6 +102,17 @@ export default function SourceHub({
                 <dl>
                   <dt>Fichier</dt>
                   <dd>{source.fileName}</dd>
+                  {source.sheetName && (
+                    <>
+                      <dt>Feuille importée</dt>
+                      <dd>
+                        {source.sheetName}
+                        {source.sheetCount > 1
+                          ? ` · 1 sur ${source.sheetCount} feuilles`
+                          : ""}
+                      </dd>
+                    </>
+                  )}
                   <dt>Lignes</dt>
                   <dd>{count.toLocaleString("fr-FR")}</dd>
                   <dt>Dernier import</dt>
@@ -115,7 +126,8 @@ export default function SourceHub({
                 </dl>
               ) : (
                 <p className="source-empty-copy">
-                  Connectez un CSV pour activer cette rubrique.
+                  Connectez un fichier CSV, Excel ou LibreOffice pour activer
+                  cette rubrique.
                 </p>
               )}
               {allErrors[type.id] && (
@@ -249,7 +261,7 @@ export default function SourceHub({
       <section className="settings-card">
         <h2>Effacer les imports locaux</h2>
         <p>
-          Supprime tous les fichiers importés de ce navigateur. Vos fichiers CSV
+          Supprime tous les fichiers importés de ce navigateur. Vos fichiers
           d’origine restent sur votre ordinateur.
         </p>
         <label className="checkbox-setting">

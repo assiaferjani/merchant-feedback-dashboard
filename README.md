@@ -23,7 +23,7 @@ npm run preview
 ## Connecter ses données
 
 1. Cliquer sur **Connecter un fichier** et choisir son contenu : avis, dossiers étudiants, échéancier, synthèse financière ou listes de référence.
-2. Sélectionner un fichier **CSV uniquement (.csv)**, exporté depuis Windows, macOS ou Ubuntu. Les classeurs Excel (.xlsx/.xls), Numbers, PDF et images ne sont pas importés directement : exporter d’abord la feuille en CSV depuis le tableur. Renommer une extension ne convertit pas le fichier. UTF-8, Windows-1252 et UTF-16 avec BOM sont pris en charge. Limites : **20 Mo et 100 000 lignes** par fichier.
+2. Sélectionner un fichier **CSV, TSV, TXT délimité, Excel (.xlsx/.xls) ou LibreOffice (.ods)** depuis Windows, macOS ou Ubuntu. Les fichiers texte acceptent les séparateurs virgule, point-virgule et tabulation, en UTF-8, Windows-1252 ou UTF-16 avec BOM. Pour un classeur, la première feuille visible contenant des données est importée et son nom est affiché dans les sources. Placez la feuille souhaitée en premier ou exportez-la séparément. Les formules ne sont pas exécutées : le classeur doit contenir leurs résultats enregistrés. Les erreurs de calcul et formules sans résultat sont signalées. Depuis Numbers, exporter en Excel ou CSV. PDF, images et documents non structurés ne sont pas pris en charge. Limites : **20 Mo et 100 000 lignes**, et 512 colonnes par feuille de classeur.
 3. Vérifier les colonnes reconnues et les contrôles de qualité dans la rubrique correspondante. Un fichier financier générique nécessite de définir ses correspondances avant de calculer des montants.
 4. Dans **Sources & paramètres**, confirmer la devise des fichiers financiers et rapprocher les totaux avec les exports d’origine. Le choix d’une devise ajoute une unité ; il ne convertit aucun montant.
 
@@ -35,9 +35,9 @@ Les imports sont analysés dans un Web Worker, indépendamment du fil d’affich
 
 - Les imports et leurs correspondances sont enregistrés dans **IndexedDB**, sur cet appareil et dans ce profil de navigateur.
 - Ils sont restaurés après rechargement. Les périodes, principaux filtres et préférences d’affichage sont enregistrés séparément dans le stockage local.
-- Effacer les données du navigateur efface aussi les imports. Conserver les CSV d’origine comme sauvegarde ; les réimporter permet de restaurer l’espace.
+- Effacer les données du navigateur efface aussi les imports. Conserver les fichiers d’origine comme sauvegarde ; les réimporter permet de restaurer l’espace.
 - Le bouton **Effacer les imports enregistrés** exige une confirmation explicite. Le message de réussite apparaît après la suppression locale.
-- Une source financière liée à un fichier peut être relue lorsque le navigateur autorise cette fonctionnalité. L’import CSV normal reste disponible sans cette autorisation.
+- Une source financière liée à un fichier peut être relue lorsque le navigateur autorise cette fonctionnalité. L’import de fichier normal reste disponible sans cette autorisation.
 - Si le stockage est bloqué ou saturé, l’interface le signale. Ne pas supposer que les derniers imports sont sauvegardés tant que cette erreur persiste.
 
 Aucun fichier de production ne doit être ajouté au dépôt. Seul `data/merchant_feedback_synthetic.csv`, entièrement fictif, est inclus pour la démonstration.
@@ -86,19 +86,19 @@ Les workflows GitHub exécutent les contrôles sur les pull requests et les bran
 
 ## Organisation du code
 
-| Emplacement                             | Rôle                                                             |
-| --------------------------------------- | ---------------------------------------------------------------- |
-| `src/Dashboard.jsx`                     | État partagé, navigation, imports et orchestration des pages     |
-| `src/pages/`                            | Espaces avis, commercial, financier et gestion des sources       |
-| `src/components/`                       | Navigation, dialogues, tableaux, graphiques et contrôles communs |
-| `src/dashboard-config.js`               | Libellés, formats et palette des graphiques                      |
-| `src/import-service.js`, `src/workers/` | Lecture et analyse des CSV hors du fil d’affichage               |
-| `src/import-limits.js`                  | Limites de taille et de lignes                                   |
-| `src/*-data.js`, `src/*-csv.js`         | Adaptateurs, validation et calculs métier                        |
-| `src/local-source-storage.js`           | Stockage local ; écritures et suppressions sérialisées           |
-| `src/view-preferences.js`               | Préférences restaurées avec validation                           |
-| `src/styles.css`                        | Styles, composants, thèmes et règles responsive consolidés       |
-| `tests/`, `e2e/`                        | Tests unitaires et tests navigateur                              |
+| Emplacement                             | Rôle                                                               |
+| --------------------------------------- | ------------------------------------------------------------------ |
+| `src/Dashboard.jsx`                     | État partagé, navigation, imports et orchestration des pages       |
+| `src/pages/`                            | Espaces avis, commercial, financier et gestion des sources         |
+| `src/components/`                       | Navigation, dialogues, tableaux, graphiques et contrôles communs   |
+| `src/dashboard-config.js`               | Libellés, formats et palette des graphiques                        |
+| `src/import-service.js`, `src/workers/` | Lecture et analyse des fichiers tabulaires hors du fil d’affichage |
+| `src/import-limits.js`                  | Limites de taille et de lignes                                     |
+| `src/*-data.js`, `src/*-csv.js`         | Adaptateurs, validation et calculs métier                          |
+| `src/local-source-storage.js`           | Stockage local ; écritures et suppressions sérialisées             |
+| `src/view-preferences.js`               | Préférences restaurées avec validation                             |
+| `src/styles.css`                        | Styles, composants, thèmes et règles responsive consolidés         |
+| `tests/`, `e2e/`                        | Tests unitaires et tests navigateur                                |
 
 Les pages et graphiques sont chargés à la demande. Le centre de sources ne charge pas la bibliothèque de graphiques. Les palettes sont adaptées aux thèmes clair et sombre ; les animations des séries sont désactivées pour des mises à jour immédiates et stables.
 
@@ -116,3 +116,5 @@ Les contrats de données détaillés sont dans :
 - [Publication GitHub Pages et données locales](docs/github-pages-and-local-data.md)
 
 Les guides Looker Studio présents dans `docs/` documentent le prototype historique ; ils ne décrivent pas un connecteur cloud actif dans cette application.
+
+Les classeurs sont lus localement avec [SheetJS CE](https://docs.sheetjs.com/docs/getting-started/installation/nodejs/), chargé uniquement à l’import d’un classeur dans le Worker. Aucun fichier n’est envoyé à un serveur.

@@ -1,3 +1,4 @@
+import { IMPORT_FILE_ACCEPT } from "../import-limits.js";
 import { useRef } from "react";
 import { toCsv } from "../commercial-data.js";
 import {
@@ -133,7 +134,7 @@ export function Icon({ name }) {
   );
 }
 
-export function CsvImportButton({ onFile, label = "Importer mon CSV" }) {
+export function CsvImportButton({ onFile, label = "Importer mon fichier" }) {
   const inputRef = useRef(null);
   return (
     <>
@@ -150,8 +151,8 @@ export function CsvImportButton({ onFile, label = "Importer mon CSV" }) {
         type="file"
         hidden
         tabIndex={-1}
-        accept=".csv,text/csv"
-        aria-label="Choisir un fichier CSV d’avis local"
+        accept={IMPORT_FILE_ACCEPT}
+        aria-label="Choisir un fichier d’avis local"
         onChange={(event) => {
           const file = event.target.files?.[0];
           if (file) onFile(file);
@@ -182,8 +183,8 @@ export function FinancialCsvImportButton({
         type="file"
         hidden
         tabIndex={-1}
-        accept=".csv,text/csv"
-        aria-label="Choisir un fichier financier CSV local"
+        accept={IMPORT_FILE_ACCEPT}
+        aria-label="Choisir un fichier financier local"
         onChange={(event) => {
           const file = event.target.files?.[0];
           if (file) onFile(file);
@@ -211,7 +212,7 @@ export function TuitionCsvImportButton({ sourceType, onFile, label }) {
         type="file"
         hidden
         tabIndex={-1}
-        accept=".csv,text/csv"
+        accept={IMPORT_FILE_ACCEPT}
         aria-label={`Importer la source ${sourceType}`}
         onChange={(event) => {
           const file = event.target.files?.[0];
@@ -320,12 +321,12 @@ export function SourceAlert({
   const title = showConfigError
     ? "Le fichier commercial configuré n’est pas exploitable"
     : localCsvActive
-      ? "CSV local chargé — source avis active"
+      ? "Fichier local chargé — source avis active"
       : "Aucune source commerciale n’est connectée";
   const detail =
     showConfigError ||
     (localCsvActive
-      ? `Le CSV local ${localCsvSource?.fileName ? `« ${localCsvSource.fileName} »` : "importé"} (${localCsvSource?.rows?.length ?? 0} lignes) est actif. Il fournit les avis, mais pas les tables ou champs nécessaires pour calculer les activités commerciales, les inscriptions, les revenus, les objectifs ou les échéances de relance.`
+      ? `Le fichier local ${localCsvSource?.fileName ? `« ${localCsvSource.fileName} »` : "importé"} (${localCsvSource?.rows?.length ?? 0} lignes) est actif. Il fournit les avis, mais pas les tables ou champs nécessaires pour calculer les activités commerciales, les inscriptions, les revenus, les objectifs ou les échéances de relance.`
       : "Le jeu disponible contient uniquement des champs de retours commerçants. Il ne contient ni activités de prospection, ni statuts candidats confirmés, ni inscriptions, paiements, objectifs ou échéances de relance.");
   return (
     <section
@@ -481,7 +482,8 @@ export function SetupGuide({ title, detail, onConnect, onSources }) {
           <li>
             <b>Préparez votre export</b>
             <span>
-              Un fichier CSV avec les colonnes utiles à cette analyse.
+              Un fichier CSV, Excel ou LibreOffice avec les colonnes utiles à
+              cette analyse.
             </span>
           </li>
           <li>
