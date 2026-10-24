@@ -521,3 +521,47 @@ test("Excel student records preserve their sheet and financial totals in the das
   );
   await expect(page.getByText("Fictif", { exact: true })).toBeVisible();
 });
+
+test("annual scolarité exports detect levels, exclude templates, coexist and update without duplicates", async ({
+  page,
+}) => {
+  const header =
+    "ID Étudiant;Matricule;Nom;Prénom;Formation;Année universitaire;Total à payer;Total payé;Reste à payer;Taux recouvrement";
+  const annual = (year) =>
+    `${header}\nL1;M001;Fictif;A;Gestion;${year};1200 DT;400 DT;800 DT;33,3%\nL1;M002;Fictif;B;Gestion;${year};900 DT;100 DT;800 DT;11,1%\n;M099;;;;;;;;\nTotal à encaisser;Total encaissé;;;;\n2100;500;;;;\n`;
+  await page.goto("/#/data-sources");
+  for (const year of ["2025/2026", "2026/2027", "2026/2027"]) {
+    await connect(
+      page,
+      "Détection automatique",
+      `cohort-${year.replace("/", "-")}.csv`,
+      annual(year),
+    );
+    await expect(page.locator("h1")).toHaveText("Étudiants & inscriptions");
+  }
+  await expect(page.locator(".commercial-metric-value").first()).toHaveText(
+    "4",
+  );
+  await expect(page.locator(".tuition-source-card")).toContainText(
+    "Le matricule identifie les dossiers",
+  );
+  await expect(page.locator(".tuition-source-card")).toContainText(
+    "2 ligne(s) de modèle vide",
+  );
+  await page.reload();
+  await expect(page.locator(".commercial-metric-value").first()).toHaveText(
+    "4",
+  );
+  const yearFilter = page.getByLabel("Année universitaire", { exact: true });
+  await yearFilter.selectOption("2025/2026");
+  await expect(page.locator(".commercial-metric-value").first()).toHaveText(
+    "2",
+  );
+  await page.goto("/#/data-sources");
+  await expect(
+    page.getByText("cohort-2025-2026.csv", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("cohort-2026-2027.csv", { exact: true }),
+  ).toBeVisible();
+});

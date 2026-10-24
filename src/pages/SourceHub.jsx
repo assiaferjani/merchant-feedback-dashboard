@@ -117,6 +117,32 @@ export default function SourceHub({
                   <dd>{count.toLocaleString("fr-FR")}</dd>
                   <dt>Dernier import</dt>
                   <dd>{fmtDate(source.importedAt)}</dd>
+                  {source.datasets?.length > 1 && (
+                    <>
+                      <dt>Fichiers étudiants</dt>
+                      <dd>
+                        {source.datasets.map((dataset) => (
+                          <div key={dataset.fileName}>{dataset.fileName}</div>
+                        ))}
+                      </dd>
+                    </>
+                  )}
+                  {source.mappedRows && (
+                    <>
+                      <dt>Dossiers retenus</dt>
+                      <dd>{source.mappedRows.length}</dd>
+                    </>
+                  )}
+                  {(source.excludedSummaryRows > 0 ||
+                    source.excludedTemplateRows > 0) && (
+                    <>
+                      <dt>Lignes hors dossiers exclues</dt>
+                      <dd>
+                        {(source.excludedSummaryRows ?? 0) +
+                          (source.excludedTemplateRows ?? 0)}
+                      </dd>
+                    </>
+                  )}
                   {source.invalidDates > 0 && (
                     <>
                       <dt>Dates à vérifier</dt>
@@ -141,7 +167,11 @@ export default function SourceHub({
                   className="primary-button"
                   onClick={() => onImportType(type.id)}
                 >
-                  {source ? "Remplacer le fichier" : "Connecter un fichier"}
+                  {source
+                    ? type.id === "students"
+                      ? "Ajouter / actualiser une année"
+                      : "Remplacer le fichier"
+                    : "Connecter un fichier"}
                 </button>
                 {source && type.id !== "references" && (
                   <button

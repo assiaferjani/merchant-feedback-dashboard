@@ -338,16 +338,24 @@ function App() {
       return { ok: false, error: "Un import est déjà en cours." };
     importing.current = true;
     let message = "";
+    let parsedAuto;
     setImportProgress({ label: "Préparation de l’import…" });
     const parser = async (selected) => {
       try {
-        return await parseLocalFile(selected, sourceType, setImportProgress);
+        return (
+          parsedAuto ??
+          (await parseLocalFile(selected, sourceType, setImportProgress))
+        );
       } catch (error) {
         message = error.message;
         throw error;
       }
     };
     try {
+      if (sourceType === "auto") {
+        parsedAuto = await parseLocalFile(file, "auto", setImportProgress);
+        sourceType = parsedAuto.detectedSourceType;
+      }
       const ok =
         sourceType === "commercial"
           ? await importCsvWith(file, dispatchCsvDashboard, parser)
@@ -366,7 +374,9 @@ function App() {
       }
       if (ok && sourceType !== "commercial" && sourceType !== "references")
         setSettings((previous) => ({ ...previous, totalsReviewed: false }));
-      return { ok, error: message };
+      return { ok, error: message, sourceType };
+    } catch (error) {
+      return { ok: false, error: error.message };
     } finally {
       importing.current = false;
       setImportProgress(null);
@@ -388,7 +398,7 @@ function App() {
           students: "students",
           schedule: "schedule",
           references: "data-sources",
-        }[sourceType],
+        }[result.sourceType],
       );
     return result;
   };
@@ -811,7 +821,7 @@ function App() {
                   formations: "students",
                   revenue: "financial",
                   followups: "financial",
-                }[activePage] ?? "commercial",
+                }[activePage] ?? "auto",
               )
             }
             onFinancialImport={handleFinancialImport}

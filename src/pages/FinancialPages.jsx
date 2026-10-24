@@ -22,6 +22,7 @@ import {
 } from "../financial-csv.js";
 import {
   TUITION_SOURCE_FIELDS,
+  studentRecordKey,
   summarizeStudents,
   summarizeSchedule,
   groupTuitionByFormation,
@@ -1172,7 +1173,9 @@ export function TuitionSourceCard({
           onFile={onImport}
           label={
             source
-              ? "Remplacer le fichier"
+              ? sourceType === "students"
+                ? "Ajouter / actualiser une année"
+                : "Remplacer le fichier"
               : `Importer ${sourceType === "references" ? "les référentiels" : "le fichier"}`
           }
         />
@@ -1184,6 +1187,28 @@ export function TuitionSourceCard({
       )}
       {source && (
         <>
+          {(source.importNotes ?? []).map((note) => (
+            <p className="tuition-quality-note" key={note}>
+              {note}
+            </p>
+          ))}
+          {(source.excludedSummaryRows > 0 ||
+            source.excludedTemplateRows > 0) && (
+            <p className="tuition-quality-note">
+              {source.excludedSummaryRows ?? 0} ligne(s) de synthèse et{" "}
+              {source.excludedTemplateRows ?? 0} ligne(s) de modèle vide exclues
+              des dossiers.
+            </p>
+          )}
+          {source.datasets?.length > 1 && (
+            <ul>
+              {source.datasets.map((dataset) => (
+                <li key={dataset.fileName}>
+                  {dataset.fileName} · {dataset.rows.length} dossiers
+                </li>
+              ))}
+            </ul>
+          )}
           {source.missingRequired?.length > 0 && (
             <div className="quality-warning">
               Colonnes d’identification non reconnues :{" "}
@@ -1339,18 +1364,18 @@ export function TuitionStudentsPage({
   const summary = summarizeStudents(filtered);
   const unique = new Map();
   for (const row of filtered) {
-    const key = row.studentId || row.matricule;
+    const key = studentRecordKey(row);
     if (key && !unique.has(key)) unique.set(key, row);
   }
   const cleanForMoney =
-    unique.size ===
-    filtered.filter((row) => row.studentId || row.matricule).length;
+    unique.size === filtered.filter((row) => studentRecordKey(row)).length;
   const columns = [
     ["matricule", "Matricule"],
     ["lastName", "Nom"],
     ["firstName", "Prénom"],
     ["formation", "Formation"],
     ["academicYear", "Année"],
+    ["studyLevel", "Niveau"],
     ["campus", "Campus"],
     ["amountDue", "À payer", true],
     ["amountPaid", "Payé", true],
@@ -1388,9 +1413,9 @@ export function TuitionStudentsPage({
           />
           <div className="commercial-kpi-grid tuition-kpis">
             <MetricCard
-              title="Étudiants distincts"
+              title="Dossiers étudiants"
               value={fmtCount(summary.distinctStudents)}
-              helper="Étudiants identifiés par référence ou matricule"
+              helper="Référence ou matricule et année universitaire"
               icon="candidate"
             />
             <MetricCard
@@ -1497,6 +1522,7 @@ export function TuitionStudentsPage({
               <label key={label}>
                 {label}
                 <select
+                  aria-label={label}
                   value={value}
                   onChange={(event) => setter(event.target.value)}
                 >
@@ -1523,7 +1549,7 @@ export function TuitionStudentsPage({
           </div>
           <Panel
             title="Dossiers étudiants"
-            subtitle={`${fmtCount(filtered.length)} ligne(s) · ${fmtCount(summary.distinctStudents)} étudiant(s) distinct(s)`}
+            subtitle={`${fmtCount(filtered.length)} ligne(s) · ${fmtCount(summary.distinctStudents)} dossier(s) distinct(s)`}
           >
             <DataTable
               rows={filtered}
@@ -1767,6 +1793,7 @@ export function TuitionSchedulePage({
               <label key={label}>
                 {label}
                 <select
+                  aria-label={label}
                   value={value}
                   onChange={(event) => setter(event.target.value)}
                 >
@@ -1950,9 +1977,9 @@ export function TuitionRevenuePage({
             {students && (
               <>
                 <MetricCard
-                  title="Étudiants distincts · Dossiers étudiants"
+                  title="Dossiers étudiants · scolarité"
                   value={fmtCount(studentSummary.distinctStudents)}
-                  helper="Identifiants distincts"
+                  helper="Référence ou matricule et année universitaire"
                   icon="candidate"
                 />
                 <MetricCard
@@ -2181,7 +2208,7 @@ export function TuitionFormationsPage({
             rows={rows}
             columns={[
               ["formation", "Formation"],
-              ["studentCount", "Étudiants distincts", "number"],
+              ["studentCount", "Dossiers étudiants", "number"],
               ["scheduleCount", "Échéances", "number"],
               ["amountDue", "À payer", "money"],
               ["amountPaid", "Payé", "money"],
@@ -2251,9 +2278,9 @@ export function TuitionOverviewSummary({ sources, aggregate, dateRange }) {
         {sources.students && (
           <>
             <MetricCard
-              title="Étudiants distincts · étudiants"
+              title="Dossiers étudiants"
               value={fmtCount(studentSummary.distinctStudents)}
-              helper="Identifiants distincts"
+              helper="Référence ou matricule et année universitaire"
               icon="candidate"
             />
             <MetricCard

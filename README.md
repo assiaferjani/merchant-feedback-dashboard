@@ -22,7 +22,7 @@ npm run preview
 
 ## Connecter ses données
 
-1. Cliquer sur **Connecter un fichier** et choisir son contenu : avis, dossiers étudiants, échéancier, synthèse financière ou listes de référence.
+1. Cliquer sur **Connecter un fichier** et laisser la détection automatique ou choisir son contenu : avis, dossiers étudiants, échéancier, synthèse financière ou listes de référence.
 2. Sélectionner un fichier **CSV, TSV, TXT délimité, Excel (.xlsx/.xls) ou LibreOffice (.ods)** depuis Windows, macOS ou Ubuntu. Les fichiers texte acceptent les séparateurs virgule, point-virgule et tabulation, en UTF-8, Windows-1252 ou UTF-16 avec BOM. Pour un classeur, la première feuille visible contenant des données est importée et son nom est affiché dans les sources. Placez la feuille souhaitée en premier ou exportez-la séparément. Les formules ne sont pas exécutées : le classeur doit contenir leurs résultats enregistrés. Les erreurs de calcul et formules sans résultat sont signalées. Depuis Numbers, exporter en Excel ou CSV. PDF, images et documents non structurés ne sont pas pris en charge. Limites : **20 Mo et 100 000 lignes**, et 512 colonnes par feuille de classeur.
 3. Vérifier les colonnes reconnues et les contrôles de qualité dans la rubrique correspondante. Un fichier financier générique nécessite de définir ses correspondances avant de calculer des montants.
 4. Dans **Sources & paramètres**, confirmer la devise des fichiers financiers et rapprocher les totaux avec les exports d’origine. Le choix d’une devise ajoute une unité ; il ne convertit aucun montant.
@@ -30,6 +30,15 @@ npm run preview
 Les imports sont analysés dans un Web Worker, indépendamment du fil d’affichage. Le tableau de bord indique les étapes de lecture et de validation. Un import échoué conserve la source précédente.
 
 **Sources & paramètres** rassemble les cinq sources, leurs noms, dates d’import, nombres de lignes et correspondances. Les sources ne sont jamais fusionnées automatiquement. Les critères de paiement encaissé restent à confirmer explicitement à partir des statuts observés dans le fichier.
+
+## Exports annuels de scolarité et détection des sources
+
+- La détection automatique reconnaît les exports d’avis, les dossiers étudiants et les synthèses financières à partir de leurs colonnes. Un choix manuel incompatible avec le contenu reconnu affiche une explication.
+- Lorsque « ID Étudiant » contient les niveaux L1, L2, L3, MP1 ou MP2, le niveau est conservé séparément et le matricule identifie le dossier.
+- Les lignes de modèle sans étudiant et les synthèses ajoutées après « Total à encaisser » ou « SYNTHÈSE DES ÉCHÉANCES » sont exclues des dossiers. Le nombre de lignes exclues reste visible.
+- Les imports d’une seule année universitaire s’ajoutent aux autres années. Réimporter la même année la remplace, même si le nom du fichier ou le séparateur de l’année change. Sans année unique identifiée, l’import remplace la source étudiante. Le filtre d’année permet de consulter une promotion ; les montants correspondent aux dossiers identifiés par référence ou matricule et année.
+- Les pourcentages sont reconnus. Les écarts entre le reste déclaré et « à payer moins payé » restent signalés ; les fichiers d’origine ne sont pas modifiés.
+- Deux versions d’un export d’avis se remplacent : elles ne sont pas additionnées.
 
 ## Stockage et restauration
 

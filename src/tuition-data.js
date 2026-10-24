@@ -8,6 +8,7 @@ import {
 export const TUITION_SOURCE_FIELDS = {
   students: [
     ["studentId", "ID \u00c9tudiant", true],
+    ["studyLevel", "Niveau d’études"],
     ["matricule", "Matricule"],
     ["lastName", "Nom"],
     ["firstName", "Pr\u00e9nom"],
@@ -96,7 +97,7 @@ export function discoverTuitionCsvText(
   );
 }
 
-function discoverTuitionCsvTextResult(parsed, sourceType, fileName) {
+export function discoverTuitionCsvTextResult(parsed, sourceType, fileName) {
   if (!TUITION_SOURCE_FIELDS[sourceType])
     throw new Error("Type de source financière inconnu.");
   const mapping = {};
@@ -107,6 +108,54 @@ function discoverTuitionCsvTextResult(parsed, sourceType, fileName) {
     const index = normalizedHeaders.findIndex((header) => aliases.has(header));
     mapping[id] = index < 0 ? "" : parsed.headers[index];
   }
+  let rows = parsed.rows;
+  let excludedSummaryRows = 0;
+  let excludedTemplateRows = 0;
+  const importNotes = [];
+  if (sourceType === "students") {
+    // Some scolarité exports append unrelated dashboards under the student table.
+    const footer = rows.findIndex((raw) =>
+      /^(total a encaisser|synthese des echeances)$/.test(
+        normalize(raw[mapping.studentId] ?? Object.values(raw)[0]),
+      ),
+    );
+    if (footer >= 0) {
+      excludedSummaryRows = rows.length - footer;
+      rows = rows.slice(0, footer);
+    }
+    const levelRows = rows.filter((raw) =>
+      /^(L[1-3]|M[PR]?[1-2])$/i.test(
+        String(raw[mapping.studentId] ?? "").trim(),
+      ),
+    );
+    const identified = rows.filter(
+      (raw) => raw[mapping.lastName] && raw[mapping.matricule],
+    );
+    if (
+      levelRows.length >= 2 &&
+      levelRows.length >= identified.length * 0.8 &&
+      mapping.matricule
+    ) {
+      mapping.studyLevel = mapping.studentId;
+      mapping.studentId = "";
+      importNotes.push(
+        "La colonne « ID Étudiant » contient les niveaux d’études (L1, L2, MP1…). Le matricule identifie les dossiers.",
+      );
+      const kept = rows.filter((raw) =>
+        [
+          "studyLevel",
+          "lastName",
+          "firstName",
+          "formation",
+          "academicYear",
+          "amountDue",
+          "amountPaid",
+        ].some((id) => !blank(raw[mapping[id]])),
+      );
+      excludedTemplateRows = rows.length - kept.length;
+      rows = kept;
+    }
+  }
   const missingRequired = missingRequiredTuitionFields(sourceType, mapping);
   return {
     sourceType,
@@ -114,7 +163,10 @@ function discoverTuitionCsvTextResult(parsed, sourceType, fileName) {
     sheetName: parsed.sheetName,
     sheetCount: parsed.sheetCount,
     headers: parsed.headers,
-    rows: parsed.rows,
+    rows,
+    excludedSummaryRows,
+    excludedTemplateRows,
+    importNotes,
     rowCount: parsed.rowCount,
     delimiter: parsed.delimiter,
     preambleRows: parsed.preambleRows,
@@ -126,6 +178,85 @@ function discoverTuitionCsvTextResult(parsed, sourceType, fileName) {
       (sourceType === "references" && !Object.values(mapping).some(Boolean))
         ? "incomplete"
         : "valid",
+  };
+}
+
+function parseTuitionNumber(value, field) {
+  if (field === "recoveryRate" && /%\s*$/.test(value)) {
+    const percent = parseFinancialAmount(value.replace(/%\s*$/, ""));
+    return percent === null ? null : percent / 100;
+  }
+  return parseFinancialAmount(value);
+}
+
+export function studentRecordKey(row) {
+  const identity = row.studentId || row.matricule;
+  return identity
+    ? JSON.stringify([String(identity).trim(), normalize(row.academicYear)])
+    : "";
+}
+
+// Keep annual imports independently replaceable, while exposing a unified table.
+export function mergeStudentSources(previous, incoming) {
+  const years = (source) => [
+    ...new Set(
+      source.rows
+        .map((raw) => normalize(raw[source.mapping.academicYear]))
+        .filter(Boolean),
+    ),
+  ];
+  const incomingYears = years(incoming);
+  const previousDatasets = previous?.datasets ?? (previous ? [previous] : []);
+  const datasets =
+    incomingYears.length === 1
+      ? [
+          ...previousDatasets.filter(
+            (source) => !years(source).includes(incomingYears[0]),
+          ),
+          incoming,
+        ]
+      : [incoming];
+  if (datasets.length === 1) return { ...incoming, datasets };
+  const definitions = TUITION_SOURCE_FIELDS.students;
+  const present = definitions.filter(([id]) =>
+    datasets.some((source) => source.mapping[id]),
+  );
+  const mapping = Object.fromEntries(
+    definitions.map(([id, label]) => [
+      id,
+      present.some((field) => field[0] === id) ? label : "",
+    ]),
+  );
+  return {
+    ...incoming,
+    fileName: `${datasets.length} fichiers étudiants`,
+    sheetName: undefined,
+    sheetCount: undefined,
+    datasets,
+    headers: present.map(([, label]) => label),
+    mapping,
+    rows: datasets.flatMap((source) =>
+      source.rows.map((raw) =>
+        Object.fromEntries(
+          present.map(([id, label]) => [
+            label,
+            raw[source.mapping[id]] ?? null,
+          ]),
+        ),
+      ),
+    ),
+    rowCount: datasets.reduce((total, source) => total + source.rowCount, 0),
+    excludedSummaryRows: datasets.reduce(
+      (total, source) => total + (source.excludedSummaryRows ?? 0),
+      0,
+    ),
+    excludedTemplateRows: datasets.reduce(
+      (total, source) => total + (source.excludedTemplateRows ?? 0),
+      0,
+    ),
+    importNotes: [
+      ...new Set(datasets.flatMap((source) => source.importNotes ?? [])),
+    ],
   };
 }
 
@@ -142,7 +273,7 @@ export function mapTuitionRows(source, mapping = source?.mapping ?? {}) {
         row[id] = !rawValue
           ? null
           : kind === "money" || kind === "number"
-            ? parseFinancialAmount(rawValue)
+            ? parseTuitionNumber(rawValue, id)
             : kind === "date"
               ? parseFinancialDate(rawValue)
               : rawValue;
@@ -175,7 +306,7 @@ export function mapTuitionRows(source, mapping = source?.mapping ?? {}) {
         return Object.values(row).some((value) => !blank(value));
       const key =
         source.sourceType === "students"
-          ? row.studentId || row.matricule
+          ? studentRecordKey(row)
           : row.installmentId || row.matricule;
       if (!key || isTotal(key)) return false;
       return Object.values(row).some((value) => value !== null && value !== "");
@@ -194,7 +325,7 @@ export function tuitionSourceQuality(source, rows = mapTuitionRows(source)) {
   const ids = rows
     .map((row) =>
       source.sourceType === "students"
-        ? row.studentId || row.matricule
+        ? studentRecordKey(row)
         : row.installmentId,
     )
     .filter(Boolean);
@@ -233,7 +364,7 @@ export function tuitionSourceQuality(source, rows = mapTuitionRows(source)) {
       if (kind === "date" && !parseFinancialDate(value)) invalidDates += 1;
       if (
         (kind === "money" || kind === "number") &&
-        parseFinancialAmount(value) === null
+        parseTuitionNumber(value, id) === null
       )
         invalidAmounts += 1;
     }
@@ -270,7 +401,7 @@ export function tuitionSourceQuality(source, rows = mapTuitionRows(source)) {
 
 export function summarizeStudents(rows) {
   const distinctIds = new Set(
-    rows.map((row) => row.studentId || row.matricule).filter(Boolean),
+    rows.map((row) => studentRecordKey(row)).filter(Boolean),
   );
   const sumKnown = (key) => {
     const values = rows
@@ -280,9 +411,7 @@ export function summarizeStudents(rows) {
       ? values.reduce((total, value) => total + value, 0)
       : null;
   };
-  const identifiers = rows
-    .map((row) => row.studentId || row.matricule)
-    .filter(Boolean);
+  const identifiers = rows.map((row) => studentRecordKey(row)).filter(Boolean);
   const duplicateIdentifiers = identifiers.length !== new Set(identifiers).size;
   const amounts = duplicateIdentifiers
     ? { amountDue: null, amountPaid: null, amountRemaining: null }
@@ -295,7 +424,7 @@ export function summarizeStudents(rows) {
   const overdueIds = new Set(
     overdueValues
       .filter((row) => Number(row.daysOverdue) > 0)
-      .map((row) => row.studentId || row.matricule)
+      .map((row) => studentRecordKey(row))
       .filter(Boolean),
   );
   return {
@@ -359,7 +488,7 @@ export function groupTuitionByFormation(studentRows, scheduleRows) {
   const entries = new Map();
   const idsByFormation = new Map();
   const studentIds = studentRows
-    .map((row) => row.studentId || row.matricule)
+    .map((row) => studentRecordKey(row))
     .filter(Boolean);
   const hasDuplicateStudents = studentIds.length !== new Set(studentIds).size;
   for (const row of studentRows)
@@ -374,7 +503,7 @@ export function groupTuitionByFormation(studentRows, scheduleRows) {
         _paidCount: 0,
         _remainingCount: 0,
       };
-      const identifier = row.studentId || row.matricule;
+      const identifier = studentRecordKey(row);
       if (identifier) {
         const formationIds = idsByFormation.get(row.formation) ?? new Set();
         formationIds.add(identifier);

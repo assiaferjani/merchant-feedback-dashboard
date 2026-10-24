@@ -40,7 +40,7 @@ export default function ImportDialog({
   onClose,
   onImport,
   progress,
-  initialType = "commercial",
+  initialType = "auto",
 }) {
   const [selectedType, setSelectedType] = useState(initialType);
   const [error, setError] = useState("");
@@ -73,6 +73,13 @@ export default function ImportDialog({
         Importez un export texte délimité ou un classeur. Choisissez le type de
         données qu’il contient ; chaque source reste indépendante et locale.
       </p>
+      <p className="privacy-note">
+        Les années universitaires des dossiers étudiants sont conservées
+        ensemble. Réimporter une même année actualise cette année. Sans année
+        identifiée, le fichier remplace la source étudiante. Les exports d’avis
+        et les synthèses remplacent leur version précédente, sans cumuler les
+        doublons.
+      </p>
       <div className="import-steps" aria-label="Étapes de l’import">
         <span>1 · Type de données</span>
         <span>2 · Vérification du fichier</span>
@@ -80,7 +87,15 @@ export default function ImportDialog({
       </div>
       <fieldset disabled={busy} className="source-type-options">
         <legend>Que contient votre fichier ?</legend>
-        {SOURCE_TYPES.map((type) => (
+        {[
+          {
+            id: "auto",
+            title: "Détection automatique",
+            detail:
+              "Reconnaît les avis, les dossiers étudiants et les synthèses à partir des colonnes.",
+          },
+          ...SOURCE_TYPES,
+        ].map((type) => (
           <label
             key={type.id}
             className={selectedType === type.id ? "selected" : ""}

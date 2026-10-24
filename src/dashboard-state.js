@@ -2,6 +2,7 @@ import { createImportedCsvSource } from "./commercial-csv.js";
 import { mapFinancialDataset } from "./financial-csv.js";
 import {
   mapTuitionRows,
+  mergeStudentSources,
   missingRequiredTuitionFields,
   tuitionSourceQuality,
 } from "./tuition-data.js";
@@ -122,12 +123,14 @@ export function dashboardCsvReducer(state = initialDashboardCsvState, action) {
     case "clear-financial-import-error":
       return { ...state, financialImportError: "" };
     case "tuition-csv-discovered": {
-      const source = {
+      let source = {
         ...action.source,
         importedAt: action.importedAt ?? new Date().toISOString(),
         mapping: action.mapping ?? action.source.mapping,
         fileName: action.fileName ?? action.source.fileName,
       };
+      if (source.sourceType === "students")
+        source = mergeStudentSources(state.tuitionSources?.students, source);
       const rows = mapTuitionRows(source, source.mapping);
       source.mappedRows = rows;
       source.quality = tuitionSourceQuality(source, rows);

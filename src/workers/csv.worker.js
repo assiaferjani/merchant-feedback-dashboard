@@ -1,7 +1,4 @@
-import { parseCommercialCsvFile } from "../commercial-csv.js";
-import { parseFinancialCsvFile } from "../financial-csv.js";
-import { discoverTuitionCsvFile } from "../tuition-data.js";
-import { validateImportRows } from "../import-limits.js";
+import { parseSourceFile } from "../source-import.js";
 
 self.onmessage = async ({ data: { file, sourceType } }) => {
   try {
@@ -11,13 +8,7 @@ self.onmessage = async ({ data: { file, sourceType } }) => {
         label: "Analyse des colonnes et vérification des données…",
       },
     });
-    const result =
-      sourceType === "commercial"
-        ? await parseCommercialCsvFile(file)
-        : sourceType === "financial"
-          ? await parseFinancialCsvFile(file)
-          : await discoverTuitionCsvFile(file, sourceType);
-    self.postMessage({ result: validateImportRows(result) });
+    self.postMessage({ result: await parseSourceFile(file, sourceType) });
   } catch (error) {
     self.postMessage({
       error:
